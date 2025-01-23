@@ -1,21 +1,28 @@
-import * as WebSocket from "ws";
-import { createServer } from "http";
+import { createServer, IncomingMessage } from "http";
+import { Server, WebSocket } from "ws";
 
-class WebSocketSever {
-  wss: WebSocket.Server;
+const PORT = 8080;
+const httpServer = createServer();
+const webSocketServer = new Server({ server: httpServer });
 
-  constructor(port: number = 8080) {
-    const server = createServer();
-    this.wss = new WebSocket.Server({ server });
+webSocketServer.on("connection", (ws: WebSocket, request: IncomingMessage) => {
+  console.log("클라이언트가 연결되었습니다.");
+  console.log(request.socket.remoteAddress);
 
-    this.wss.on("connection", (ws) => {
-      console.log("Client Connected");
+  ws.on("message", (message) => {
+    console.log(`받은 메세지: ${message}`);
+    webSocketServer.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message.toString());
+      }
     });
+  });
 
-    server.listen(port, () => {
-      console.log(`Websocket sever running on port: ${port}`);
-    });
-  }
-}
+  ws.on("close", (message) => {
+    console.log("클라이언트 연결이 끊겼습니다.");
+  });
+});
 
-new WebSocketSever(8080);
+httpServer.listen(PORT, () => {
+  console.log(`Server running is on port: ${PORT}`);
+});
