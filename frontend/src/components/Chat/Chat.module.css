@@ -1,0 +1,18 @@
+.container {
+  display: flex;
+  width: 1200px;
+  padding: 2rem
+}
+
+.form {
+  width: 100%;
+  position: relative;
+  display: flex;
+  gap: 5px;
+  padding-top: 40px;
+}
+
+.input {
+  width: 350px;
+  padding: 0.65rem 2rem;
+}
