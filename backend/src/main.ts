@@ -1,25 +1,25 @@
-import { createServer, IncomingMessage } from "http";
-import { Server, WebSocket } from "ws";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 const PORT = 8080;
 const httpServer = createServer();
-const webSocketServer = new Server({ server: httpServer });
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+  },
+});
 
-webSocketServer.on("connection", (ws: WebSocket, request: IncomingMessage) => {
+io.on("connection", (socket) => {
   console.log("클라이언트가 연결되었습니다.");
-  console.log(request.socket.remoteAddress);
 
-  ws.on("message", (message) => {
-    console.log(`받은 메세지: ${message}`);
-    webSocketServer.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message.toString());
-      }
-    });
+  socket.on("disconnect", () => {
+    console.log("클라이언트 연결이 종료되었습니다.");
   });
 
-  ws.on("close", (message) => {
-    console.log("클라이언트 연결이 끊겼습니다.");
+  socket.on("chat", (message) => {
+    console.log("chat", message);
+
+    io.emit("chat", message);
   });
 });
 

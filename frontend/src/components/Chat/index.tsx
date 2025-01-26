@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import io, { type Socket } from "socket.io-client";
 
 import styles from "./Chat.module.css";
 
 const Chat = () => {
-  const websocket = useRef<WebSocket | null>(null);
+  const websocket = useRef<Socket | null>(null);
   const [message, setMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [chatLogs, setChatLogs] = useState<string[]>([]);
@@ -12,32 +13,32 @@ const Chat = () => {
     event.preventDefault();
     if (!message || !websocket.current || !isConnected) return;
 
-    websocket.current.send(message);
+    websocket.current.emit("chat", message);
     setMessage("");
   };
 
   useEffect(() => {
-    websocket.current = new WebSocket(`http://localhost:8080`);
+    websocket.current = io(`http://localhost:8080`);
 
-    websocket.current.onopen = () => {
+    websocket.current.on("connect", () => {
       setIsConnected(true);
+      console.log(isConnected);
       setChatLogs((prevLogs) => [...prevLogs, "웹소켓이 연결되었습니다."]);
-    };
+    });
 
-    websocket.current.onmessage = (event) => {
-      console.log("메세지를 전달받았습니다.", event.data);
-      setChatLogs((prevLogs) => [...prevLogs, event.data]);
-    };
+    websocket.current.on("chat", (msg) => {
+      console.log("메세지를 전달받았습니다.", msg);
+      setChatLogs((prevLogs) => [...prevLogs, msg]);
+    });
 
-    websocket.current.onerror = (error) => {
+    websocket.current.on("error", (error) => {
       console.error(error);
-    };
+    });
 
-    websocket.current.onclose = (event) => {
-      console.log(`웹소켓 연결이 종료되었습니다.`, event.code, event.reason);
-      setIsConnected(false);
+    websocket.current.on("disconnect", (reason, detail) => {
+      console.log(`웹소켓 연결이 종료되었습니다.`, reason, detail);
       setChatLogs((prevLogs) => [...prevLogs, "웹소켓 연결이 종료되었습니다."]);
-    };
+    });
 
     return () => {
       if (websocket.current) {
